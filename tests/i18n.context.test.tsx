@@ -60,7 +60,10 @@ vi.mock("../src/i18n/i18n.store.js", async (importOriginal) => {
     }),
     __testHooks: {
       setCurrentTranslator: (lang: string) => {
-        h.currentTranslator = h.translatorsByLang[lang] ?? h.currentTranslator;
+        h.currentTranslator =
+          (h.translatorsByLang as Record<string, typeof h.currentTranslator>)[
+            lang
+          ] ?? h.currentTranslator;
       },
       setDefault: () => {
         h.currentTranslator = h.defaultTranslator;
@@ -68,7 +71,10 @@ vi.mock("../src/i18n/i18n.store.js", async (importOriginal) => {
       resolveLoad: (lang: string) => {
         const d = h.loads.get(lang);
         if (!d) throw new Error(`No pending load for ${lang}`);
-        h.currentTranslator = h.translatorsByLang[lang] ?? h.currentTranslator;
+        h.currentTranslator =
+          (h.translatorsByLang as Record<string, typeof h.currentTranslator>)[
+            lang
+          ] ?? h.currentTranslator;
         d.resolve();
       },
       rejectLoad: (lang: string, err?: unknown) => {
