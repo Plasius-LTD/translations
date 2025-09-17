@@ -31,14 +31,14 @@ This project is open source (see `LICENSE`). To protect contributors and users, 
 
 ## What this project does
 
-`@plasius/translations` provides a small, strongly-typed schema library:
+`@plasius/translations` provides a lightweight internationalisation (i18n) library for TypeScript and React:
 
-- A fluent field builder (e.g. `field().string().required()`),
-- Built-in validators for common standards (ISO/RFC/OWASP, etc.),
-- PII annotations + redaction utilities,
-- Type inference for safe, consistent entities across projects.
+- Core store API for managing current language, fallback, and direction (LTR/RTL),
+- `t()` translation function with support for placeholders, nested keys, and composite sentences,
+- React bindings (`I18nProvider`, `useI18n`) for scoped translations in components,
+- JSON-based dictionaries with support for fallback and default loading states.
 
-Contributions typically fall into: new validators, field builder features, type improvements, docs, and tooling quality.
+Contributions typically fall into: translation features, dictionary utilities, React integration, type improvements, documentation, and tooling quality.
 
 ---
 
