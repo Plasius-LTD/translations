@@ -20,6 +20,20 @@ The format is based on **[Keep a Changelog](https://keepachangelog.com/en/1.1.0/
 - **Security**
   - (placeholder)
 
+## [1.0.4] - 2025-09-17
+
+- **Added**
+  - (placeholder)
+
+- **Changed**
+  - (placeholder)
+
+- **Fixed**
+  - (placeholder)
+
+- **Security**
+  - (placeholder)
+
 ## [1.0.3] - 2025-09-17
 
 - **Fixed**
@@ -57,7 +71,8 @@ The format is based on **[Keep a Changelog](https://keepachangelog.com/en/1.1.0/
 
 ---
 
-[Unreleased]: https://github.com/Plasius-LTD/translations/compare/v1.0.3...HEAD
+[Unreleased]: https://github.com/Plasius-LTD/translations/compare/v1.0.4...HEAD
 [1.0.1]: https://github.com/Plasius-LTD/translations/releases/tag/v1.0.1
 [1.0.2]: https://github.com/Plasius-LTD/translations/releases/tag/v1.0.2
 [1.0.3]: https://github.com/Plasius-LTD/translations/releases/tag/v1.0.3
+[1.0.4]: https://github.com/Plasius-LTD/translations/releases/tag/v1.0.4
