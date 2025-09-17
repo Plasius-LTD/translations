@@ -77,7 +77,6 @@ Translation dictionaries are defined as simple JSON files where each key is a st
 }
 ```
 
-
 Nested objects are supported to help group related keys, and can be accessed with dot notation in your code (e.g. `t("user.profile")`).
 
 ### Composite and complex sentences
