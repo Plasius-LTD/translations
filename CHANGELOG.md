@@ -8,31 +8,13 @@ The format is based on **[Keep a Changelog](https://keepachangelog.com/en/1.1.0/
 
 ## [Unreleased]
 
-- **Added**
-  - (placeholder)
-
-- **Changed**
-  - (placeholder)
-
 - **Fixed**
-  - (placeholder)
+  - CD Pipeline now reordered to include version correctly into change log.
 
-- **Security**
-  - (placeholder)
-
-## [] - 2025-09-17
+## [1.0.2] - 2025-09-17
 
 - **Added**
-  - (placeholder)
-
-- **Changed**
-  - (placeholder)
-
-- **Fixed**
-  - (placeholder)
-
-- **Security**
-  - (placeholder)
+  - Code coverage
 
 ## [1.0.1] - 2025-09-17
 
@@ -63,4 +45,4 @@ The format is based on **[Keep a Changelog](https://keepachangelog.com/en/1.1.0/
 
 [Unreleased]: https://github.com/Plasius-LTD/translations/compare/v...HEAD
 [1.0.1]: https://github.com/Plasius-LTD/translations/releases/tag/v1.0.1
-[]: https://github.com/Plasius-LTD/translations/releases/tag/v
+[1.0.2]: https://github.com/Plasius-LTD/translations/releases/tag/v1.0.2
