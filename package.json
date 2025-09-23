@@ -71,5 +71,15 @@
   },
   "peerDependencies": {
     "react": "^19.1.1"
-  }
+  },
+  "funding": [
+    {
+      "type": "patreon",
+      "url": "https://patreon.com/PlasiusLTD"
+    },
+    {
+      "type": "github",
+      "url": "https://github.com/sponsors/Plasius-LTD"
+    }
+  ]
 }
