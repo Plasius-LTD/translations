@@ -1,15 +1,8 @@
-export type LanguageCode =
-  | "en-GB"
-  | "en-US"
-  | "fr-FR"
-  | "es-ES"
-  | "ar"
-  | "pt-PT"
-  | "de"
-  | "ja"
-  | "zh"
-  | "ko"
-  | "mn";
+/**
+ * BCP‑47 language tag (e.g., "en", "en-GB", "zh-Hant-HK", "ar-EG").
+ * We accept any well-formed tag at type level to avoid limiting supported locales.
+ */
+export type LanguageCode = string;
 
 export type Direction = "ltr" | "rtl";
 
@@ -110,5 +103,18 @@ export const createI18n = (config: I18nConfig): I18nState => {
   };
 };
 
-const getDirection = (lang: LanguageCode): Direction =>
-  ["ar", "he", "fa", "ur"].includes(lang) ? "rtl" : "ltr";
+// Languages and scripts that are written right-to-left
+const RTL_LANGS = new Set(["ar", "he", "fa", "ur", "dv", "ps", "ku", "syr", "ug", "yi"]);
+const RTL_SCRIPTS = new Set(["Arab", "Hebr", "Thaa", "Syrc"]);
+
+const getDirection = (lang: LanguageCode): Direction => {
+  if (!lang) return "ltr";
+  // Split BCP‑47 tag: primary-language [ - script ] [ - region ] ...
+  const parts = String(lang).split("-");
+  const primary = (parts[0] || "").toLowerCase();
+  if (RTL_LANGS.has(primary)) return "rtl";
+  // Look for 4-letter Script subtag (TitleCase by spec). Keep case as-is for comparison set.
+  const script = parts.find(p => p.length === 4);
+  if (script && RTL_SCRIPTS.has(script)) return "rtl";
+  return "ltr";
+};
