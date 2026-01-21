@@ -29,3 +29,8 @@ This repo provides the `@plasius/translations` TypeScript package: a small i18n 
 - Update `README.md` and `CHANGELOG.md` for user-facing changes.
 - Follow `SECURITY.md` for vulnerability reporting.
 - Contributions require a CLA (see `legal/CLA.md`).
+
+## AI guidance
+- After any change, run relevant BDD/TDD tests when they exist; mention if skipped.
+- For fixes, add/update a BDD or TDD test that fails first and validate it passes after the fix when possible.
+- When adding or updating dependencies, prefer lazy-loading (dynamic import/code splitting) to avoid heavy first-load network use when applicable.
