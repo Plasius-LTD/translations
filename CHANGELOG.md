@@ -12,6 +12,7 @@ The format is based on **[Keep a Changelog](https://keepachangelog.com/en/1.1.0/
   - (placeholder)
 
 - **Changed**
+  - Restore `main`, `module`, and `types` fields alongside the export map for dual ESM/CJS support.
   - (placeholder)
 
 - **Fixed**
