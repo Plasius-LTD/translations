@@ -1,6 +1,6 @@
 {
   "name": "@plasius/translations",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "type": "module",
   "description": "i18n compatible translation manager",
   "keywords": [
