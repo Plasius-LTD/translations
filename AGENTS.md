@@ -29,6 +29,7 @@ This repo provides the `@plasius/translations` TypeScript package: a small i18n 
 - Update `README.md` and `CHANGELOG.md` for user-facing changes.
 - Follow `SECURITY.md` for vulnerability reporting.
 - Contributions require a CLA (see `legal/CLA.md`).
+- Architectural changes require ADRs in `docs/adrs/` (or the repo ADRs folder); ensure a package-function ADR exists.
 
 ## AI guidance
 - After any change, run relevant BDD/TDD tests when they exist; mention if skipped.
