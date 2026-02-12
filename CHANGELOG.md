@@ -143,3 +143,17 @@ The format is based on **[Keep a Changelog](https://keepachangelog.com/en/1.1.0/
 [1.0.6]: https://github.com/Plasius-LTD/translations/releases/tag/v1.0.6
 [1.0.7]: https://github.com/Plasius-LTD/translations/releases/tag/v1.0.7
 [1.0.8]: https://github.com/Plasius-LTD/translations/releases/tag/v1.0.8
+
+## [1.0.8] - 2026-02-11
+
+- **Added**
+  - Initial release.
+
+- **Changed**
+  - (placeholder)
+
+- **Fixed**
+  - (placeholder)
+
+- **Security**
+  - (placeholder)
