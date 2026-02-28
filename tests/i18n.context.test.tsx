@@ -119,6 +119,7 @@ const Consumer = ({ testId = "value" }: { testId?: string }) => {
 
 describe("I18nProvider scope", () => {
   beforeEach(() => {
+    vi.clearAllMocks();
     // reset console spy
     errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     // reset mocked store state so each test starts from the same baseline
