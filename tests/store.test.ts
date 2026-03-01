@@ -3,15 +3,14 @@ import { setupI18nMock } from "./helpers/mocki18n";
 
 let loadTranslations: ReturnType<typeof vi.fn>;
 let setLanguage: ReturnType<typeof vi.fn>;
-let t: ReturnType<typeof vi.fn>;
 let getLastCreateArgs: () => any;
 
-({ loadTranslations, setLanguage, t, getLastCreateArgs } = setupI18nMock());
+({ loadTranslations, setLanguage, getLastCreateArgs } = setupI18nMock());
 
 // Helpers to import the module fresh each test and to access its exports
 async function importStore() {
   vi.resetModules();
-  ({ loadTranslations, setLanguage, t, getLastCreateArgs } = setupI18nMock());
+  ({ loadTranslations, setLanguage, getLastCreateArgs } = setupI18nMock());
   return await import("../src/i18n/i18n.store");
 }
 

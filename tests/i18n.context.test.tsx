@@ -1,4 +1,4 @@
-import React, { memo, useEffect } from "react";
+import React, { useEffect } from "react";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, act, cleanup } from "@testing-library/react";
 
@@ -95,16 +95,7 @@ import * as Store from "../src/i18n/i18n.store.js";
 // Now import the SUT. These imports will see the mocked getTranslator/loadLanguage.
 import * as Scope from "../src/i18n/i18n.context";
 const { I18nProvider, useI18n } = Scope as any;
-const { getTranslator, loadLanguage, __testHooks } = Store as any;
-
-const Reset = memo(() => {
-  // ensure we use the default translator at test start unless a test changes it
-  useEffect(() => {
-    __testHooks.setDefault();
-    __testHooks.clear();
-  }, []);
-  return null;
-});
+const { getTranslator, __testHooks } = Store as any;
 
 const Consumer = ({ testId = "value" }: { testId?: string }) => {
   const i18n = useI18n();
@@ -194,7 +185,9 @@ describe("I18nProvider scope", () => {
       // swallow unhandled rejection warnings
       try {
         await __testHooks.getLoad("en-GB")?.promise;
-      } catch {}
+      } catch {
+        void 0;
+      }
     });
 
     // state preserved
@@ -336,7 +329,9 @@ describe("I18nProvider scope", () => {
       __testHooks.rejectLoad("en-GB", "string error");
       try {
         await __testHooks.getLoad("en-GB")?.promise;
-      } catch {}
+      } catch {
+        void 0;
+      }
     });
     expect(console.error).toHaveBeenCalled();
   });
