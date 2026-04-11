@@ -87,6 +87,52 @@ describe("i18n", () => {
     expect(i18n.t("hello")).toBe("Hola");
   });
 
+  it("loadBundleTranslations() merges bundle dictionaries in load order", () => {
+    const i18n = createI18n(config);
+
+    i18n.loadBundleTranslations("fr-FR", "frontend/app-shell", {
+      shellTitle: "Console",
+      sharedLabel: "Premier",
+    });
+    i18n.loadBundleTranslations("fr-FR", "frontend/routes/about", {
+      aboutHeading: "A propos",
+      sharedLabel: "Deuxieme",
+    });
+    i18n.setLanguage("fr-FR");
+
+    expect(i18n.t("shellTitle")).toBe("Console");
+    expect(i18n.t("aboutHeading")).toBe("A propos");
+    expect(i18n.t("sharedLabel")).toBe("Deuxieme");
+  });
+
+  it("later bundle overlays do not remove keys loaded by earlier bundles", () => {
+    const i18n = createI18n(config);
+
+    i18n.loadBundleTranslations("fr-FR", "frontend/app-shell", {
+      shellTitle: "Console",
+      sharedLabel: "Premier",
+    });
+    i18n.loadBundleTranslations("fr-FR", "frontend/routes/about", {
+      aboutHeading: "A propos",
+    });
+    i18n.setLanguage("fr-FR");
+
+    expect(i18n.t("shellTitle")).toBe("Console");
+    expect(i18n.t("aboutHeading")).toBe("A propos");
+    expect(i18n.t("sharedLabel")).toBe("Premier");
+  });
+
+  it("tracks normalized loaded bundle paths per language", () => {
+    const i18n = createI18n(config);
+
+    i18n.loadBundleTranslations("fr-FR", "/frontend/app-shell/", {
+      shellTitle: "Console",
+    });
+
+    expect(i18n.hasLoadedBundle("fr-FR", "frontend/app-shell")).toBe(true);
+    expect(i18n.getLoadedBundlePaths("fr-FR")).toEqual(["frontend/app-shell"]);
+  });
+
   it("falls back to the fallback language dictionary when current language has no dictionary", () => {
     const i18n = createI18n(config);
     // No "ja" dictionary in config; should use fallback (en-GB) for lookups
