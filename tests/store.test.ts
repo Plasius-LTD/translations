@@ -2,15 +2,26 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import { setupI18nMock } from "./helpers/mocki18n";
 
 let loadTranslations: ReturnType<typeof vi.fn>;
+let loadBundleTranslations: ReturnType<typeof vi.fn>;
 let setLanguage: ReturnType<typeof vi.fn>;
 let getLastCreateArgs: () => any;
 
-({ loadTranslations, setLanguage, getLastCreateArgs } = setupI18nMock());
+({
+  loadTranslations,
+  loadBundleTranslations,
+  setLanguage,
+  getLastCreateArgs,
+} = setupI18nMock());
 
 // Helpers to import the module fresh each test and to access its exports
 async function importStore() {
   vi.resetModules();
-  ({ loadTranslations, setLanguage, getLastCreateArgs } = setupI18nMock());
+  ({
+    loadTranslations,
+    loadBundleTranslations,
+    setLanguage,
+    getLastCreateArgs,
+  } = setupI18nMock());
   return await import("../src/i18n/i18n.store");
 }
 
@@ -65,6 +76,121 @@ describe("loadLanguage()", () => {
     expect(fetchMock).toHaveBeenCalledWith("/i18n/fr-FR");
     expect(loadTranslations).toHaveBeenCalledWith("fr-FR", dict);
     expect(setLanguage).toHaveBeenCalledWith("fr-FR");
+  });
+
+  it("loads requested bundle paths in order and switches language", async () => {
+    const { loadLanguage } = await importStore();
+
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ shellTitle: "Bonjour" }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ aboutHeading: "A propos" }),
+      });
+
+    global.fetch = fetchMock;
+
+    const result = await loadLanguage("fr-FR", {
+      bundlePaths: ["frontend/app-shell", "frontend/routes/about"],
+    });
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      "/language/fr-FR/frontend/app-shell"
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      "/language/fr-FR/frontend/routes/about"
+    );
+    expect(loadBundleTranslations).toHaveBeenNthCalledWith(
+      1,
+      "fr-FR",
+      "frontend/app-shell",
+      { shellTitle: "Bonjour" }
+    );
+    expect(loadBundleTranslations).toHaveBeenNthCalledWith(
+      2,
+      "fr-FR",
+      "frontend/routes/about",
+      { aboutHeading: "A propos" }
+    );
+    expect(setLanguage).toHaveBeenCalledWith("fr-FR");
+    expect(result.bundlePaths).toEqual([
+      "frontend/app-shell",
+      "frontend/routes/about",
+    ]);
+  });
+
+  it("falls back to en-GB for bundle paths that are unavailable in the requested locale", async () => {
+    const { loadLanguage } = await importStore();
+
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({ ok: false, status: 404 })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ shellTitle: "Hello" }),
+      });
+
+    global.fetch = fetchMock;
+
+    const result = await loadLanguage("fr-FR", {
+      bundlePaths: ["frontend/app-shell"],
+    });
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      "/language/fr-FR/frontend/app-shell"
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      "/language/en-GB/frontend/app-shell"
+    );
+    expect(loadBundleTranslations).toHaveBeenCalledWith(
+      "fr-FR",
+      "frontend/app-shell",
+      { shellTitle: "Hello" }
+    );
+    expect(result.fallbackBundlePaths).toEqual(["frontend/app-shell"]);
+  });
+
+  it("caches bundle fetches by locale and logical path", async () => {
+    const { loadLanguage, __testHooks } = await importStore();
+
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ shellTitle: "Hello" }),
+    });
+
+    global.fetch = fetchMock;
+
+    await loadLanguage("fr-FR", {
+      bundlePaths: ["frontend/app-shell", "frontend/app-shell/"],
+    });
+    await loadLanguage("fr-FR", {
+      bundlePaths: ["frontend/app-shell"],
+    });
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(__testHooks.getBundleCacheKeys()).toEqual([
+      "fr-FR::frontend/app-shell",
+    ]);
+  });
+
+  it("rejects invalid bundle paths before attempting to fetch", async () => {
+    const { loadLanguage } = await importStore();
+
+    const fetchMock = vi.fn();
+    global.fetch = fetchMock;
+
+    await expect(
+      loadLanguage("fr-FR", { bundlePaths: ["../unsafe"] })
+    ).rejects.toThrow(/invalid segment/i);
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it("throws if fetch is not ok and does not call i18n methods", async () => {

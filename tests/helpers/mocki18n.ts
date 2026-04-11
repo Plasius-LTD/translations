@@ -10,7 +10,10 @@ import { vi } from "vitest";
  */
 export function setupI18nMock() {
   const loadTranslations = vi.fn();
+  const loadBundleTranslations = vi.fn();
   const setLanguage = vi.fn();
+  const hasLoadedBundle = vi.fn(() => false);
+  const getLoadedBundlePaths = vi.fn(() => []);
   const t = vi.fn((key: string) => key);
 
   let lastCreateArgs: any = null;
@@ -20,13 +23,39 @@ export function setupI18nMock() {
   vi.doMock("../../src/i18n/i18n", () => ({
     createI18n: vi.fn((cfg: any) => {
       lastCreateArgs = cfg;
-      return { loadTranslations, setLanguage, t };
+      return {
+        language: cfg.language,
+        fallbackLanguage: cfg.fallback,
+        direction: "ltr",
+        loadTranslations,
+        loadBundleTranslations,
+        setLanguage,
+        hasLoadedBundle,
+        getLoadedBundlePaths,
+        t,
+      };
+    }),
+    normalizeBundlePath: vi.fn((bundlePath: string) => {
+      const normalizedPath = bundlePath.trim().replace(/^\/+|\/+$/g, "");
+      const segments = normalizedPath.split("/");
+      if (
+        !normalizedPath ||
+        segments.some(
+          (segment) => segment.length === 0 || segment === "." || segment === ".."
+        )
+      ) {
+        throw new Error(`bundlePath contains an invalid segment: ${bundlePath}`);
+      }
+      return normalizedPath;
     }),
   }));
 
   return {
     loadTranslations,
+    loadBundleTranslations,
     setLanguage,
+    hasLoadedBundle,
+    getLoadedBundlePaths,
     t,
     getLastCreateArgs: () => lastCreateArgs,
   } as const;

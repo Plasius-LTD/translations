@@ -11,10 +11,14 @@ const h = vi.hoisted(() => {
     dict: Record<string, string>
   ) => ({
     language: lang,
+    fallbackLanguage: "en-GB",
     direction: dir,
     t: (key: string) => dict[key] ?? key,
     setLanguage: () => {},
     loadTranslations: () => {},
+    loadBundleTranslations: () => {},
+    hasLoadedBundle: () => false,
+    getLoadedBundlePaths: () => [],
   });
 
   const enDict = { hello: "Hello" };
@@ -104,6 +108,10 @@ const Consumer = ({ testId = "value" }: { testId?: string }) => {
       <div data-testid={testId}>{i18n.t("hello")}</div>
       <div data-testid={`${testId}-language`}>{i18n.language}</div>
       <div data-testid={`${testId}-direction`}>{i18n.direction}</div>
+      <div data-testid={`${testId}-ready-state`}>{i18n.readyState}</div>
+      <div data-testid={`${testId}-required-bundles`}>
+        {i18n.requiredBundles.join(",")}
+      </div>
     </div>
   );
 };
@@ -141,18 +149,25 @@ describe("I18nProvider scope", () => {
       </I18nProvider>
     );
     expect(spy).toHaveBeenCalledTimes(1);
-    expect(spy).toHaveBeenCalledWith("en-GB");
+    expect(spy).toHaveBeenCalledWith("en-GB", { bundlePaths: [] });
   });
 
   it("updates context after loadLanguage resolves", async () => {
     render(
-      <I18nProvider initialLang="fr-FR">
+      <I18nProvider
+        initialLang="fr-FR"
+        bundlePaths={["frontend/app-shell", "frontend/routes/about"]}
+      >
         <Consumer />
       </I18nProvider>
     );
 
     // before resolve -> default translator visible
     expect(screen.getByTestId("value").textContent).toBe("Default");
+    expect(screen.getByTestId("value-ready-state").textContent).toBe("loading");
+    expect(screen.getByTestId("value-required-bundles").textContent).toBe(
+      "frontend/app-shell,frontend/routes/about"
+    );
 
     // resolve and swap translator to fr-FR
     await act(async () => {
@@ -162,6 +177,7 @@ describe("I18nProvider scope", () => {
     expect(screen.getByTestId("value").textContent).toBe("Bonjour");
     expect(screen.getByTestId("value-language").textContent).toBe("fr-FR");
     expect(screen.getByTestId("value-direction").textContent).toBe("ltr");
+    expect(screen.getByTestId("value-ready-state").textContent).toBe("ready");
   });
 
   it("does not update context before loadLanguage resolves", () => {
@@ -192,6 +208,7 @@ describe("I18nProvider scope", () => {
 
     // state preserved
     expect(screen.getByTestId("value").textContent).toBe("Default");
+    expect(screen.getByTestId("value-ready-state").textContent).toBe("error");
     expect(console.error).toHaveBeenCalled();
   });
 
@@ -234,6 +251,28 @@ describe("I18nProvider scope", () => {
     );
     // still only one call
     expect(spy).toHaveBeenCalledTimes(1);
+  });
+
+  it("reloads when bundle requirements change", async () => {
+    const spy = vi.spyOn(Store as any, "loadLanguage");
+    const { rerender } = render(
+      <I18nProvider initialLang="fr-FR" bundlePaths={["frontend/app-shell"]}>
+        <Consumer />
+      </I18nProvider>
+    );
+
+    expect(spy).toHaveBeenCalledTimes(1);
+
+    rerender(
+      <I18nProvider
+        initialLang="fr-FR"
+        bundlePaths={["frontend/app-shell", "frontend/routes/about"]}
+      >
+        <Consumer />
+      </I18nProvider>
+    );
+
+    expect(spy).toHaveBeenCalledTimes(2);
   });
 
   it("handles rapid successive language changes; last one wins", async () => {
@@ -295,6 +334,7 @@ describe("I18nProvider scope", () => {
     expect(typeof i18n.t).toBe("function");
     expect(typeof i18n.setLanguage).toBe("function");
     expect(typeof i18n.loadTranslations).toBe("function");
+    expect(typeof i18n.loadBundleTranslations).toBe("function");
     expect(typeof i18n.language).toBe("string");
     expect(["ltr", "rtl"]).toContain(i18n.direction);
   });
@@ -374,10 +414,9 @@ describe("I18nProvider scope", () => {
     }
   });
 
-  it("minimizes re-renders when initialLang is unchanged", async () => {
-    // We check that the *context value reference* remains stable
-    // (no new translator object) when rerendering with same initialLang.
+  it("does not enqueue additional loads when initialLang is unchanged", async () => {
     const seen: unknown[] = [];
+    const spy = vi.spyOn(Store as any, "loadLanguage");
     const IdentityConsumer = () => {
       const i18n = useI18n();
       useEffect(() => {
@@ -395,7 +434,7 @@ describe("I18nProvider scope", () => {
     // Allow first effect to run
     await act(async () => {});
 
-    // Rerender with the same prop; effect will run again, but the reference should be identical
+    // Rerender with the same prop; effect may rerun, but no new load should start.
     rerender(
       <I18nProvider initialLang="en-GB">
         <IdentityConsumer />
@@ -403,10 +442,7 @@ describe("I18nProvider scope", () => {
     );
     await act(async () => {});
 
-    // We expect two commits (two effects), but the i18n object should be the same reference
     expect(seen.length).toBeGreaterThanOrEqual(1);
-    if (seen.length >= 2) {
-      expect(seen[0]).toBe(seen[1]);
-    }
+    expect(spy).toHaveBeenCalledTimes(1);
   });
 });

@@ -14,7 +14,7 @@ Apache-2.0. ESM + CJS builds. TypeScript types included.
 
 ## Overview
 
-`@plasius/translations`
+`@plasius/translations` is the shared Plasius i18n runtime for flat locale dictionaries and page-scoped translation bundles.
 
 ---
 
@@ -42,10 +42,11 @@ See `demo/README.md` for the local sanity-check scaffold.
 ### Accessing the store
 
 ```tsx
-import { i18n } from "@plasius/translations";
+import { getTranslator, loadLanguage } from "@plasius/translations";
 
-// Set the active language
-i18n.setLanguage("fr-FR");
+const i18n = getTranslator();
+
+await loadLanguage("fr-FR");
 
 // Translate keys using t()
 console.log(i18n.t("hello")); // → "Bonjour" (if loaded)
@@ -58,21 +59,54 @@ console.log(i18n.t("unknown_key")); // → "unknown_key"
 
 ```tsx
 import React from "react";
-import { I18nProvider, useI18n } from "@plasius/translations/react";
+import { I18nProvider, useI18n } from "@plasius/translations";
 
 function Greeting() {
-  const { t } = useI18n();
+  const { t, isReady, readyState } = useI18n();
+
+  if (!isReady) {
+    return <p>{readyState === "error" ? "Translation load failed" : t("loading")}</p>;
+  }
+
   return <h1>{t("hello")}</h1>;
 }
 
 export default function App() {
   return (
-    <I18nProvider initialLang="en-GB">
+    <I18nProvider
+      initialLang="en-GB"
+      bundlePaths={["frontend/app-shell", "frontend/routes/about"]}
+    >
       <Greeting />
     </I18nProvider>
   );
 }
 ```
+
+### Page bundle loading
+
+Use `bundlePaths` when a consumer needs backend-served page bundles.
+
+```tsx
+import { I18nProvider, loadLanguage } from "@plasius/translations";
+
+await loadLanguage("fr-FR", {
+  bundlePaths: ["frontend/app-shell", "frontend/routes/about"],
+});
+```
+
+Bundle requests use `/language/{language}/{bundlePath}` and merge in the order requested. If a requested locale bundle is missing, the same logical path is retried against `en-GB`.
+
+### Readiness contract
+
+`useI18n()` returns:
+
+- `readyState`: `"idle" | "loading" | "ready" | "error"`
+- `isReady`: convenience boolean for `"ready"`
+- `requiredBundles`: normalized bundle paths for the current provider scope
+- `error`: the last bundle-loading error when `readyState === "error"`
+
+This is the package-level contract used by the site rollout behind `site.i18n.page-bundles.enabled`.
 
 ### Translation file format
 
@@ -91,6 +125,8 @@ Translation dictionaries are defined as simple JSON files where each key is a st
 ```
 
 Nested objects are supported to help group related keys, and can be accessed with dot notation in your code (e.g. `t("user.profile")`).
+
+For page-bundle rollout work, prefer flat key/value JSON within each logical bundle so merge order and ownership remain explicit.
 
 ### Composite and complex sentences
 
