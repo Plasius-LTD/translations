@@ -9,10 +9,12 @@ The format is based on **[Keep a Changelog](https://keepachangelog.com/en/1.1.0/
 ## [Unreleased]
 
 - **Added**
-  - (placeholder)
+  - Added bundle-aware language loading for logical page paths such as `frontend/app-shell` and `frontend/routes/about`.
+  - Added React readiness metadata (`readyState`, `isReady`, `requiredBundles`, `error`) for bundle-scoped loading flows.
 
 - **Changed**
-  - (placeholder)
+  - Preserved the legacy flat `/i18n/{language}` loader while introducing `/language/{language}/{bundlePath}` bundle loading.
+  - Documented the `site.i18n.page-bundles.enabled` rollout contract and bundle merge semantics.
 
 - **Fixed**
   - (placeholder)
