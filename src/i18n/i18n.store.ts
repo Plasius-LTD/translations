@@ -69,7 +69,12 @@ function normalizeRuntimeEndpoint(rawValue: string, fallback: string): string {
     return fallback;
   }
 
-  const withoutTrailingSlash = trimmed.replace(/\/+$/, "");
+  let endIndex = trimmed.length;
+  while (endIndex > 0 && trimmed.charCodeAt(endIndex - 1) === 47) {
+    endIndex -= 1;
+  }
+
+  const withoutTrailingSlash = endIndex > 0 ? trimmed.slice(0, endIndex) : "/";
   if (/^https?:\/\//i.test(withoutTrailingSlash)) {
     return withoutTrailingSlash;
   }

@@ -253,6 +253,46 @@ describe("loadLanguage()", () => {
     );
   });
 
+  it("normalizes endpoint overrides and falls back when TTL input is invalid", async () => {
+    const { configureI18nRuntime, getI18nRuntimeConfig } = await importStore();
+
+    configureI18nRuntime({
+      legacyLanguageEndpoint: "api/i18n/",
+      pageBundleEndpoint: "   ",
+      bundleCacheTtlMs: -1,
+    });
+
+    expect(getI18nRuntimeConfig()).toEqual({
+      legacyLanguageEndpoint: "/api/i18n",
+      pageBundleEndpoint: "/language",
+      bundleCacheTtlMs: 300000,
+    });
+  });
+
+  it("can disable the in-memory bundle cache entirely", async () => {
+    const { configureI18nRuntime, loadLanguage, __testHooks } = await importStore();
+    configureI18nRuntime({ bundleCacheTtlMs: 0 });
+
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue({
+        ok: true,
+        json: async () => ({ shellTitle: "Hello" }),
+      });
+
+    global.fetch = fetchMock;
+
+    await loadLanguage("fr-FR", {
+      bundlePaths: ["frontend/app-shell"],
+    });
+    await loadLanguage("fr-FR", {
+      bundlePaths: ["frontend/app-shell"],
+    });
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(__testHooks.getBundleCacheKeys()).toEqual([]);
+  });
+
   it("rejects invalid bundle paths before attempting to fetch", async () => {
     const { loadLanguage } = await importStore();
 
