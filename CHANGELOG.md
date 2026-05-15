@@ -9,10 +9,10 @@ The format is based on **[Keep a Changelog](https://keepachangelog.com/en/1.1.0/
 ## [Unreleased]
 
 - **Added**
-  - (placeholder)
+  - Added runtime configuration for legacy and page-bundle endpoints so consumers can target environment-specific translation hosts without patching package source.
 
 - **Changed**
-  - (placeholder)
+  - Bounded the in-memory page-bundle cache with a 5-minute default TTL and documented how consumers can tune or disable that cache.
 
 - **Fixed**
   - (placeholder)

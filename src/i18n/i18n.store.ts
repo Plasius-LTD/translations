@@ -4,17 +4,25 @@ import type { BundlePath, LanguageCode, TranslationDictionary } from "./i18n.js"
 const DEFAULT_LANGUAGE = "en-GB";
 const LEGACY_LANGUAGE_ENDPOINT = "/i18n";
 const PAGE_BUNDLE_ENDPOINT = "/language";
+const DEFAULT_BUNDLE_CACHE_TTL_MS = 5 * 60 * 1000;
 
 interface CachedBundleRecord {
   readonly bundlePath: BundlePath;
   readonly dictionary: TranslationDictionary;
   readonly sourceLanguage: LanguageCode;
   readonly usedFallback: boolean;
+  readonly cachedAtMs: number;
 }
 
 export interface LoadLanguageOptions {
   readonly bundlePaths?: readonly BundlePath[];
   readonly forceReload?: boolean;
+}
+
+export interface I18nRuntimeConfig {
+  legacyLanguageEndpoint: string;
+  pageBundleEndpoint: string;
+  bundleCacheTtlMs: number;
 }
 
 export interface LoadLanguageResult {
@@ -45,13 +53,67 @@ const i18n = createI18n({
 
 const bundleCache = new Map<string, CachedBundleRecord>();
 const inFlightBundleRequests = new Map<string, Promise<CachedBundleRecord>>();
+const runtimeConfig: I18nRuntimeConfig = {
+  legacyLanguageEndpoint: LEGACY_LANGUAGE_ENDPOINT,
+  pageBundleEndpoint: PAGE_BUNDLE_ENDPOINT,
+  bundleCacheTtlMs: DEFAULT_BUNDLE_CACHE_TTL_MS,
+};
 
 function createBundleCacheKey(lang: LanguageCode, bundlePath: BundlePath): string {
   return `${lang}::${bundlePath}`;
 }
 
+function normalizeRuntimeEndpoint(rawValue: string, fallback: string): string {
+  const trimmed = rawValue.trim();
+  if (trimmed.length === 0) {
+    return fallback;
+  }
+
+  const withoutTrailingSlash = trimmed.replace(/\/+$/, "");
+  if (/^https?:\/\//i.test(withoutTrailingSlash)) {
+    return withoutTrailingSlash;
+  }
+
+  return withoutTrailingSlash.startsWith("/") ? withoutTrailingSlash : `/${withoutTrailingSlash}`;
+}
+
+function normalizeBundleCacheTtlMs(value: number): number {
+  if (!Number.isFinite(value) || value < 0) {
+    return DEFAULT_BUNDLE_CACHE_TTL_MS;
+  }
+
+  return Math.floor(value);
+}
+
+function shouldCacheBundleRecords(): boolean {
+  return runtimeConfig.bundleCacheTtlMs > 0;
+}
+
+function cacheBundleRecord(cacheKey: string, record: CachedBundleRecord): void {
+  if (!shouldCacheBundleRecords()) {
+    bundleCache.delete(cacheKey);
+    return;
+  }
+
+  bundleCache.set(cacheKey, record);
+}
+
+function readFreshCachedBundleRecord(cacheKey: string): CachedBundleRecord | undefined {
+  const cachedRecord = bundleCache.get(cacheKey);
+  if (!cachedRecord) {
+    return undefined;
+  }
+
+  if (Date.now() - cachedRecord.cachedAtMs <= runtimeConfig.bundleCacheTtlMs) {
+    return cachedRecord;
+  }
+
+  bundleCache.delete(cacheKey);
+  return undefined;
+}
+
 function buildLegacyLanguageUrl(lang: LanguageCode): string {
-  return `${LEGACY_LANGUAGE_ENDPOINT}/${encodeURIComponent(lang)}`;
+  return `${runtimeConfig.legacyLanguageEndpoint}/${encodeURIComponent(lang)}`;
 }
 
 function buildBundleUrl(lang: LanguageCode, bundlePath: BundlePath): string {
@@ -59,7 +121,7 @@ function buildBundleUrl(lang: LanguageCode, bundlePath: BundlePath): string {
     .split("/")
     .map((segment) => encodeURIComponent(segment))
     .join("/");
-  return `${PAGE_BUNDLE_ENDPOINT}/${encodeURIComponent(lang)}/${encodedSegments}`;
+  return `${runtimeConfig.pageBundleEndpoint}/${encodeURIComponent(lang)}/${encodedSegments}`;
 }
 
 function isTranslationDictionary(value: unknown): value is TranslationDictionary {
@@ -119,8 +181,9 @@ async function fetchBundleRecordFromNetwork(
     dictionary,
     sourceLanguage: lang,
     usedFallback,
+    cachedAtMs: Date.now(),
   };
-  bundleCache.set(createBundleCacheKey(lang, bundlePath), record);
+  cacheBundleRecord(createBundleCacheKey(lang, bundlePath), record);
   return record;
 }
 
@@ -131,7 +194,7 @@ async function fetchBundleRecord(
 ): Promise<CachedBundleRecord> {
   const cacheKey = createBundleCacheKey(lang, bundlePath);
   if (!forceReload) {
-    const cachedRecord = bundleCache.get(cacheKey);
+    const cachedRecord = readFreshCachedBundleRecord(cacheKey);
     if (cachedRecord) {
       return cachedRecord;
     }
@@ -154,21 +217,22 @@ async function fetchBundleRecord(
         dictionary,
         sourceLanguage: lang,
         usedFallback: false,
+        cachedAtMs: Date.now(),
       };
-      bundleCache.set(cacheKey, record);
+      cacheBundleRecord(cacheKey, record);
       return record;
     }
 
     if (primaryResponse.status === 404 && lang !== DEFAULT_LANGUAGE) {
       const fallbackKey = createBundleCacheKey(DEFAULT_LANGUAGE, bundlePath);
       if (!forceReload) {
-        const fallbackCachedRecord = bundleCache.get(fallbackKey);
+        const fallbackCachedRecord = readFreshCachedBundleRecord(fallbackKey);
         if (fallbackCachedRecord) {
-          const record = {
+          const record: CachedBundleRecord = {
             ...fallbackCachedRecord,
             usedFallback: true,
           };
-          bundleCache.set(cacheKey, record);
+          cacheBundleRecord(cacheKey, record);
           return record;
         }
       }
@@ -179,11 +243,11 @@ async function fetchBundleRecord(
         `Fallback translation bundle ${bundlePath} for ${DEFAULT_LANGUAGE}`,
         true
       );
-      const record = {
+      const record: CachedBundleRecord = {
         ...fallbackRecord,
         usedFallback: true,
       };
-      bundleCache.set(cacheKey, record);
+      cacheBundleRecord(cacheKey, record);
       return record;
     }
 
@@ -216,6 +280,40 @@ function normalizeBundlePaths(bundlePaths: readonly BundlePath[]): BundlePath[] 
 }
 
 export const getTranslator = () => i18n;
+
+export function configureI18nRuntime(
+  config: Partial<I18nRuntimeConfig>,
+): Readonly<I18nRuntimeConfig> {
+  if (typeof config.legacyLanguageEndpoint === "string") {
+    runtimeConfig.legacyLanguageEndpoint = normalizeRuntimeEndpoint(
+      config.legacyLanguageEndpoint,
+      LEGACY_LANGUAGE_ENDPOINT,
+    );
+  }
+
+  if (typeof config.pageBundleEndpoint === "string") {
+    runtimeConfig.pageBundleEndpoint = normalizeRuntimeEndpoint(
+      config.pageBundleEndpoint,
+      PAGE_BUNDLE_ENDPOINT,
+    );
+  }
+
+  if (typeof config.bundleCacheTtlMs === "number") {
+    runtimeConfig.bundleCacheTtlMs = normalizeBundleCacheTtlMs(config.bundleCacheTtlMs);
+  }
+
+  bundleCache.clear();
+  inFlightBundleRequests.clear();
+  return getI18nRuntimeConfig();
+}
+
+export function getI18nRuntimeConfig(): Readonly<I18nRuntimeConfig> {
+  return {
+    legacyLanguageEndpoint: runtimeConfig.legacyLanguageEndpoint,
+    pageBundleEndpoint: runtimeConfig.pageBundleEndpoint,
+    bundleCacheTtlMs: runtimeConfig.bundleCacheTtlMs,
+  };
+}
 
 export async function loadLanguage(
   lang: LanguageCode,
@@ -282,6 +380,16 @@ export const __testHooks = {
   },
   getBundleCacheKeys(): string[] {
     return [...bundleCache.keys()].sort();
+  },
+  resetRuntimeConfig(): void {
+    runtimeConfig.legacyLanguageEndpoint = LEGACY_LANGUAGE_ENDPOINT;
+    runtimeConfig.pageBundleEndpoint = PAGE_BUNDLE_ENDPOINT;
+    runtimeConfig.bundleCacheTtlMs = DEFAULT_BUNDLE_CACHE_TTL_MS;
+    bundleCache.clear();
+    inFlightBundleRequests.clear();
+  },
+  getRuntimeConfig(): Readonly<I18nRuntimeConfig> {
+    return getI18nRuntimeConfig();
   },
 };
 

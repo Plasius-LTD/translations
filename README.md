@@ -97,6 +97,26 @@ await loadLanguage("fr-FR", {
 
 Bundle requests use `/language/{language}/{bundlePath}` and merge in the order requested. If a requested locale bundle is missing, the same logical path is retried against `en-GB`.
 
+### Runtime configuration
+
+Consumers can override the transport endpoints and bound the in-memory bundle cache without forking the package:
+
+```tsx
+import { configureI18nRuntime } from "@plasius/translations";
+
+configureI18nRuntime({
+  legacyLanguageEndpoint: "/api/i18n",
+  pageBundleEndpoint: "/api/language",
+  bundleCacheTtlMs: 300_000,
+});
+```
+
+- `legacyLanguageEndpoint`: base path for `loadLanguage(lang)` when no page bundles are requested
+- `pageBundleEndpoint`: base path for bundle requests such as `frontend/routes/about`
+- `bundleCacheTtlMs`: freshness window for the package's in-memory page-bundle cache
+
+The default bundle-cache TTL is 5 minutes. Set `bundleCacheTtlMs` to `0` to disable the in-memory bundle cache entirely.
+
 ### Readiness contract
 
 `useI18n()` returns:
