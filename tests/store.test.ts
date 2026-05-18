@@ -181,6 +181,118 @@ describe("loadLanguage()", () => {
     ]);
   });
 
+  it("expires cached bundle fetches after the configured TTL", async () => {
+    const nowSpy = vi.spyOn(Date, "now");
+    nowSpy.mockReturnValue(1_000);
+
+    const { configureI18nRuntime, loadLanguage } = await importStore();
+    configureI18nRuntime({ bundleCacheTtlMs: 50 });
+
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue({
+        ok: true,
+        json: async () => ({ shellTitle: "Hello" }),
+      });
+
+    global.fetch = fetchMock;
+
+    await loadLanguage("fr-FR", {
+      bundlePaths: ["frontend/app-shell"],
+    });
+
+    nowSpy.mockReturnValue(1_025);
+    await loadLanguage("fr-FR", {
+      bundlePaths: ["frontend/app-shell"],
+    });
+
+    nowSpy.mockReturnValue(1_100);
+    await loadLanguage("fr-FR", {
+      bundlePaths: ["frontend/app-shell"],
+    });
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    nowSpy.mockRestore();
+  });
+
+  it("supports runtime endpoint overrides for legacy and page-bundle requests", async () => {
+    const { configureI18nRuntime, loadLanguage, getI18nRuntimeConfig } = await importStore();
+    configureI18nRuntime({
+      legacyLanguageEndpoint: "/api/i18n",
+      pageBundleEndpoint: "https://cdn.plasius.test/api/language/",
+    });
+
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ hello: "Bonjour" }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ shellTitle: "Bonjour" }),
+      });
+
+    global.fetch = fetchMock;
+
+    await loadLanguage("fr-FR" as any);
+    await loadLanguage("fr-FR", {
+      bundlePaths: ["frontend/app-shell"],
+      forceReload: true,
+    });
+
+    expect(getI18nRuntimeConfig()).toEqual({
+      legacyLanguageEndpoint: "/api/i18n",
+      pageBundleEndpoint: "https://cdn.plasius.test/api/language",
+      bundleCacheTtlMs: 300000,
+    });
+    expect(fetchMock).toHaveBeenNthCalledWith(1, "/api/i18n/fr-FR");
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      "https://cdn.plasius.test/api/language/fr-FR/frontend/app-shell"
+    );
+  });
+
+  it("normalizes endpoint overrides and falls back when TTL input is invalid", async () => {
+    const { configureI18nRuntime, getI18nRuntimeConfig } = await importStore();
+
+    configureI18nRuntime({
+      legacyLanguageEndpoint: "api/i18n/",
+      pageBundleEndpoint: "   ",
+      bundleCacheTtlMs: -1,
+    });
+
+    expect(getI18nRuntimeConfig()).toEqual({
+      legacyLanguageEndpoint: "/api/i18n",
+      pageBundleEndpoint: "/language",
+      bundleCacheTtlMs: 300000,
+    });
+  });
+
+  it("can disable the in-memory bundle cache entirely", async () => {
+    const { configureI18nRuntime, loadLanguage, __testHooks } = await importStore();
+    configureI18nRuntime({ bundleCacheTtlMs: 0 });
+
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue({
+        ok: true,
+        json: async () => ({ shellTitle: "Hello" }),
+      });
+
+    global.fetch = fetchMock;
+
+    await loadLanguage("fr-FR", {
+      bundlePaths: ["frontend/app-shell"],
+    });
+    await loadLanguage("fr-FR", {
+      bundlePaths: ["frontend/app-shell"],
+    });
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(__testHooks.getBundleCacheKeys()).toEqual([]);
+  });
+
   it("rejects invalid bundle paths before attempting to fetch", async () => {
     const { loadLanguage } = await importStore();
 
