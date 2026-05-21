@@ -95,7 +95,52 @@ await loadLanguage("fr-FR", {
 });
 ```
 
-Bundle requests use `/language/{language}/{bundlePath}` and merge in the order requested. If a requested locale bundle is missing, the same logical path is retried against `en-GB`.
+Bundle requests use `/language/{language}/{bundlePath}` and merge in the order requested.
+
+- Request order is deterministic: later bundles overlay earlier bundles for conflicting keys.
+- Overlay does not delete previously loaded keys; it only replaces the keys that reappear in later bundles.
+- If a requested locale bundle is missing with `404`, the same logical path is retried against `en-GB`.
+- If both the requested locale and `en-GB` fail for a required bundle, `loadLanguage()` rejects and React consumers move to `readyState === "error"`.
+
+### Bundle authoring expectations
+
+Use logical bundle paths as stable ownership boundaries rather than filesystem paths or raw URLs.
+
+- Prefer route- or shell-scoped identifiers such as `frontend/app-shell` or `frontend/routes/about`.
+- Normalize bundle paths without leading or trailing slashes; the runtime trims redundant slashes before loading.
+- Keep bundle ownership narrow. Shared shell strings belong in a shared shell bundle, while route-specific strings belong in a route bundle that can overlay the shell keys.
+- Prefer flat key/value JSON inside each logical bundle so ownership and merge effects stay obvious during rollout reviews.
+- Do not rely on later bundles to "remove" keys from earlier bundles. If a key should no longer exist, remove it from the source bundle that owns it.
+
+### Backend-served page-bundle consumption
+
+Site consumers should treat the backend as the source of truth for which logical bundles a page requires, then forward those bundle paths into the package runtime.
+
+```tsx
+import { I18nProvider, loadLanguage } from "@plasius/translations";
+
+const bundlePaths = [
+  "frontend/app-shell",
+  "frontend/routes/about",
+];
+
+await loadLanguage("fr-FR", { bundlePaths });
+
+export function AboutPage() {
+  return (
+    <I18nProvider initialLang="fr-FR" bundlePaths={bundlePaths}>
+      {/* page content */}
+    </I18nProvider>
+  );
+}
+```
+
+Consumer guidance:
+
+- Request logical bundle paths from the backend page contract or server-rendered metadata instead of rebuilding transport URLs in application code.
+- Pass the ordered bundle list unchanged to `loadLanguage()` or `I18nProvider` so overlay order stays consistent between preload and render.
+- Use a shared shell bundle first and page-specific bundles after it when a route needs both global and route-local strings.
+- Treat `/language/{language}/{bundlePath}` as an implementation detail of the runtime. Consumers should provide logical paths, not assembled fetch URLs.
 
 ### Runtime configuration
 
@@ -127,6 +172,13 @@ The default bundle-cache TTL is 5 minutes. Set `bundleCacheTtlMs` to `0` to disa
 - `error`: the last bundle-loading error when `readyState === "error"`
 
 This is the package-level contract used by the site rollout behind `site.i18n.page-bundles.enabled`.
+
+`loadLanguage()` also reports bundle readiness details for non-React consumers:
+
+- `readyBundlePaths`: bundle paths that loaded successfully for the requested language or its fallback.
+- `fallbackBundlePaths`: bundle paths that only became ready after retrying `en-GB`.
+
+That allows site consumers to distinguish "fully localized" readiness from "ready with fallback coverage" when rollout or observability rules need that detail.
 
 ### Translation file format
 
