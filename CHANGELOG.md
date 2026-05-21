@@ -10,9 +10,11 @@ The format is based on **[Keep a Changelog](https://keepachangelog.com/en/1.1.0/
 
 - **Added**
   - Added runtime configuration for legacy and page-bundle endpoints so consumers can target environment-specific translation hosts without patching package source.
+  - Documented logical bundle authoring guidance, deterministic overlay expectations, and backend-served page-bundle consumption patterns for `@plasius/translations`.
 
 - **Changed**
   - Bounded the in-memory page-bundle cache with a 5-minute default TTL and documented how consumers can tune or disable that cache.
+  - Clarified `en-GB` fallback, readiness, and fallback-bundle reporting semantics for bundle-scoped consumers.
 
 - **Fixed**
   - (placeholder)
