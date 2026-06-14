@@ -18,9 +18,9 @@ export function setupI18nMock() {
 
   let lastCreateArgs: any = null;
 
-  // Ensure a fresh mock factory is registered for this module id.
-  // Path is relative to THIS helper file: tests/helpers -> ../../src/i18n/i18n
-  vi.doMock("../../src/i18n/i18n", () => ({
+  // Match the ESM specifier used by i18n.store so the top-level createI18n
+  // call is intercepted after module cache resets.
+  vi.doMock("../../src/i18n/i18n.js", () => ({
     createI18n: vi.fn((cfg: any) => {
       lastCreateArgs = cfg;
       return {
