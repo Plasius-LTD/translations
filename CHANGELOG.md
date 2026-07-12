@@ -12,6 +12,20 @@ The format is based on **[Keep a Changelog](https://keepachangelog.com/en/1.1.0/
   - (placeholder)
 
 - **Changed**
+  - (placeholder)
+
+- **Fixed**
+  - (placeholder)
+
+- **Security**
+  - (placeholder)
+
+## [1.0.23] - 2026-07-12
+
+- **Added**
+  - (placeholder)
+
+- **Changed**
   - Adopted `@plasius/schema@^1.2.18` as the shared RFC 5646 language-tag
     validator and made RTL script matching case-insensitive for task `#28`.
 
@@ -283,7 +297,7 @@ The format is based on **[Keep a Changelog](https://keepachangelog.com/en/1.1.0/
 
 ---
 
-[Unreleased]: https://github.com/Plasius-LTD/translations/compare/v1.0.22...HEAD
+[Unreleased]: https://github.com/Plasius-LTD/translations/compare/v1.0.23...HEAD
 [1.0.1]: https://github.com/Plasius-LTD/translations/releases/tag/v1.0.1
 [1.0.2]: https://github.com/Plasius-LTD/translations/releases/tag/v1.0.2
 [1.0.3]: https://github.com/Plasius-LTD/translations/releases/tag/v1.0.3
@@ -316,3 +330,4 @@ The format is based on **[Keep a Changelog](https://keepachangelog.com/en/1.1.0/
 [1.0.18]: https://github.com/Plasius-LTD/translations/releases/tag/v1.0.18
 [1.0.21]: https://github.com/Plasius-LTD/translations/releases/tag/v1.0.21
 [1.0.22]: https://github.com/Plasius-LTD/translations/releases/tag/v1.0.22
+[1.0.23]: https://github.com/Plasius-LTD/translations/releases/tag/v1.0.23
