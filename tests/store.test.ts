@@ -1,17 +1,10 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { setupI18nMock } from "./helpers/mocki18n";
 
-let loadTranslations: ReturnType<typeof vi.fn>;
-let loadBundleTranslations: ReturnType<typeof vi.fn>;
-let setLanguage: ReturnType<typeof vi.fn>;
-let getLastCreateArgs: () => any;
-
-({
-  loadTranslations,
-  loadBundleTranslations,
-  setLanguage,
-  getLastCreateArgs,
-} = setupI18nMock());
+let loadTranslations = vi.fn();
+let loadBundleTranslations = vi.fn();
+let setLanguage = vi.fn();
+let getLastCreateArgs: () => any = () => null;
 
 // Helpers to import the module fresh each test and to access its exports
 async function importStore() {
