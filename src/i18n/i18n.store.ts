@@ -1,3 +1,4 @@
+import { validateLanguage } from "@plasius/schema";
 import { createI18n, normalizeBundlePath } from "./i18n.js";
 import type { BundlePath, LanguageCode, TranslationDictionary } from "./i18n.js";
 
@@ -324,6 +325,9 @@ export async function loadLanguage(
   lang: LanguageCode,
   options: LoadLanguageOptions = {}
 ): Promise<LoadLanguageResult> {
+  if (!validateLanguage(lang)) {
+    throw new TypeError("language must be a supported RFC 5646 language tag");
+  }
   const normalizedBundlePaths = normalizeBundlePaths(options.bundlePaths ?? []);
 
   if (normalizedBundlePaths.length === 0) {
@@ -401,6 +405,6 @@ export const __testHooks = {
 const savedLang = readSavedLanguagePreference();
 if (savedLang && savedLang !== DEFAULT_LANGUAGE) {
   loadLanguage(savedLang).catch(() => {
-    console.warn(`Could not reload saved language: ${savedLang}`);
+    console.warn("Could not reload saved language preference");
   });
 }

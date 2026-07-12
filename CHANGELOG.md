@@ -12,10 +12,12 @@ The format is based on **[Keep a Changelog](https://keepachangelog.com/en/1.1.0/
   - (placeholder)
 
 - **Changed**
-  - (placeholder)
+  - Adopted `@plasius/schema@^1.2.18` as the shared RFC 5646 language-tag
+    validator and made RTL script matching case-insensitive for task `#28`.
 
 - **Fixed**
-  - (placeholder)
+  - Rejected malformed language tags at configuration, switching, translation,
+    and bundle boundaries before they can affect runtime state or URLs.
 
 - **Security**
   - (placeholder)

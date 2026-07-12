@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import {
   createI18n,
+  isValidLanguageCode,
   type I18nConfig,
   type TranslationDictionary,
 } from "../src/i18n/i18n";
@@ -38,6 +39,39 @@ beforeEach(() => {
 });
 
 describe("i18n", () => {
+  it.each(["zh-hant-hk", "i-klingon", "x-piglatin", "sl-rozaj-biske"])(
+    "accepts the shared RFC 5646 subset: %s",
+    (language) => {
+      expect(isValidLanguageCode(language)).toBe(true);
+    },
+  );
+
+  it.each(["", "en--GB", "not_a_tag", "en-u", "x"])(
+    "rejects malformed language tags: %s",
+    (language) => {
+      expect(isValidLanguageCode(language)).toBe(false);
+    },
+  );
+
+  it("rejects invalid language tags at each public mutation boundary", () => {
+    expect(() => createI18n({ ...config, language: "en--GB" })).toThrow(/RFC 5646/u);
+    expect(() => createI18n({ ...config, fallback: "not_a_tag" })).toThrow(/RFC 5646/u);
+    expect(() => createI18n({
+      ...config,
+      translations: { ...config.translations, "en--GB": enGB },
+    })).toThrow(/RFC 5646/u);
+
+    const i18n = createI18n(config);
+    expect(() => i18n.setLanguage("en--GB")).toThrow(/RFC 5646/u);
+    expect(() => i18n.loadTranslations("not_a_tag", enGB)).toThrow(/RFC 5646/u);
+    expect(() => i18n.loadBundleTranslations("x", "frontend/app-shell", enGB)).toThrow(/RFC 5646/u);
+  });
+
+  it("computes RTL direction case-insensitively for valid script subtags", () => {
+    const i18n = createI18n({ ...config, language: "az-arab" });
+    expect(i18n.direction).toBe("rtl");
+  });
+
   it("initializes with provided language and exposes t()", () => {
     const i18n = createI18n(config);
     const str = i18n.t("hello");

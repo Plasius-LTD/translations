@@ -61,6 +61,17 @@ describe("i18n.store bootstrap", () => {
 });
 
 describe("loadLanguage()", () => {
+  it("rejects malformed language tags before constructing a request URL", async () => {
+    const { loadLanguage } = await importStore();
+    const fetchMock = vi.fn();
+    global.fetch = fetchMock;
+
+    await expect(loadLanguage("en--GB")).rejects.toThrow(/RFC 5646/u);
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(loadTranslations).not.toHaveBeenCalled();
+    expect(setLanguage).not.toHaveBeenCalled();
+  });
+
   it("fetches translations, loads them, switches language, and stores preference", async () => {
     const { loadLanguage } = await importStore();
 
