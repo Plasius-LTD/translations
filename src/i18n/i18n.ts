@@ -81,8 +81,23 @@ export interface I18nState {
   getLoadedBundlePaths: (lang: LanguageCode) => readonly BundlePath[];
 }
 
+const MAX_BUNDLE_PATH_LENGTH = 512;
+
 export function normalizeBundlePath(bundlePath: string): BundlePath {
-  const trimmed = bundlePath.trim().replace(/^\/+|\/+$/g, "");
+  const input = bundlePath.trim();
+  if (input.length > MAX_BUNDLE_PATH_LENGTH) {
+    throw new Error("bundlePath is too long");
+  }
+
+  let startIndex = 0;
+  let endIndex = input.length;
+  while (startIndex < endIndex && input.charCodeAt(startIndex) === 47) {
+    startIndex += 1;
+  }
+  while (endIndex > startIndex && input.charCodeAt(endIndex - 1) === 47) {
+    endIndex -= 1;
+  }
+  const trimmed = input.slice(startIndex, endIndex);
   if (!trimmed) {
     throw new Error("bundlePath must not be empty");
   }

@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import {
   createI18n,
   isValidLanguageCode,
+  normalizeBundlePath,
   type I18nConfig,
   type TranslationDictionary,
 } from "../src/i18n/i18n";
@@ -39,6 +40,12 @@ beforeEach(() => {
 });
 
 describe("i18n", () => {
+  it("bounds bundle paths and trims repeated boundary slashes in linear time", () => {
+    expect(normalizeBundlePath(`${"/".repeat(128)}frontend/app-shell${"/".repeat(128)}`))
+      .toBe("frontend/app-shell");
+    expect(() => normalizeBundlePath(`frontend/${"a".repeat(512)}`)).toThrow(/too long/u);
+  });
+
   it.each(["zh-hant-hk", "i-klingon", "x-piglatin", "sl-rozaj-biske"])(
     "accepts the shared RFC 5646 subset: %s",
     (language) => {
