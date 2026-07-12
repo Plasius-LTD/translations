@@ -105,5 +105,8 @@
   },
   "engines": {
     "node": ">=24"
+  },
+  "dependencies": {
+    "@plasius/schema": "^1.2.18"
   }
 }

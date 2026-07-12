@@ -1,17 +1,10 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { setupI18nMock } from "./helpers/mocki18n";
 
-let loadTranslations: ReturnType<typeof vi.fn>;
-let loadBundleTranslations: ReturnType<typeof vi.fn>;
-let setLanguage: ReturnType<typeof vi.fn>;
-let getLastCreateArgs: () => any;
-
-({
-  loadTranslations,
-  loadBundleTranslations,
-  setLanguage,
-  getLastCreateArgs,
-} = setupI18nMock());
+let loadTranslations = vi.fn();
+let loadBundleTranslations = vi.fn();
+let setLanguage = vi.fn();
+let getLastCreateArgs: () => any = () => null;
 
 // Helpers to import the module fresh each test and to access its exports
 async function importStore() {
@@ -61,6 +54,17 @@ describe("i18n.store bootstrap", () => {
 });
 
 describe("loadLanguage()", () => {
+  it("rejects malformed language tags before constructing a request URL", async () => {
+    const { loadLanguage } = await importStore();
+    const fetchMock = vi.fn();
+    global.fetch = fetchMock;
+
+    await expect(loadLanguage("en--GB")).rejects.toThrow(/RFC 5646/u);
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(loadTranslations).not.toHaveBeenCalled();
+    expect(setLanguage).not.toHaveBeenCalled();
+  });
+
   it("fetches translations, loads them, switches language, and stores preference", async () => {
     const { loadLanguage } = await importStore();
 

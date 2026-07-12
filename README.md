@@ -16,6 +16,11 @@ Apache-2.0. ESM + CJS builds. TypeScript types included.
 
 `@plasius/translations` is the shared Plasius i18n runtime for flat locale dictionaries and page-scoped translation bundles.
 
+Language identifiers are validated at runtime through `@plasius/schema`'s
+documented RFC 5646/BCP 47 subset. Invalid initial, fallback, dictionary, bundle,
+or switched language values fail before state changes or network requests occur.
+Use `isValidLanguageCode(value)` when validating caller-owned input earlier.
+
 ---
 
 ## Installation

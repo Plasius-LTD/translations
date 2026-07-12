@@ -1,8 +1,21 @@
+import { validateLanguage } from "@plasius/schema";
+
 /**
- * BCP-47 language tag (e.g., "en", "en-GB", "zh-Hant-HK", "ar-EG").
- * We accept any well-formed tag at type level to avoid limiting supported locales.
+ * Language tag accepted by the documented @plasius/schema RFC 5646 subset.
+ * Runtime validation is required because the TypeScript representation is a string.
  */
 export type LanguageCode = string;
+
+/** Returns whether a value belongs to the shared Plasius RFC 5646 subset. */
+export function isValidLanguageCode(value: unknown): value is LanguageCode {
+  return validateLanguage(value);
+}
+
+function assertLanguageCode(value: unknown, field: string): asserts value is LanguageCode {
+  if (!isValidLanguageCode(value)) {
+    throw new TypeError(`${field} must be a supported RFC 5646 language tag`);
+  }
+}
 
 export type Direction = "ltr" | "rtl";
 
@@ -68,8 +81,23 @@ export interface I18nState {
   getLoadedBundlePaths: (lang: LanguageCode) => readonly BundlePath[];
 }
 
+const MAX_BUNDLE_PATH_LENGTH = 512;
+
 export function normalizeBundlePath(bundlePath: string): BundlePath {
-  const trimmed = bundlePath.trim().replace(/^\/+|\/+$/g, "");
+  const input = bundlePath.trim();
+  if (input.length > MAX_BUNDLE_PATH_LENGTH) {
+    throw new Error("bundlePath is too long");
+  }
+
+  let startIndex = 0;
+  let endIndex = input.length;
+  while (startIndex < endIndex && input.charCodeAt(startIndex) === 47) {
+    startIndex += 1;
+  }
+  while (endIndex > startIndex && input.charCodeAt(endIndex - 1) === 47) {
+    endIndex -= 1;
+  }
+  const trimmed = input.slice(startIndex, endIndex);
   if (!trimmed) {
     throw new Error("bundlePath must not be empty");
   }
@@ -119,6 +147,8 @@ function createDefaultEntry(lang: LanguageCode): LanguageEntry {
 }
 
 export const createI18n = (config: I18nConfig): I18nState => {
+  assertLanguageCode(config.language, "language");
+  assertLanguageCode(config.fallback, "fallback");
   let currentLanguage = config.language;
   let direction = getDirection(config.language);
   const languageEntries = new Map<LanguageCode, LanguageEntry>();
@@ -159,6 +189,7 @@ export const createI18n = (config: I18nConfig): I18nState => {
   };
 
   for (const [lang, dict] of Object.entries(config.translations)) {
+    assertLanguageCode(lang, "translations language");
     if (!dict) {
       continue;
     }
@@ -210,6 +241,7 @@ export const createI18n = (config: I18nConfig): I18nState => {
   };
 
   const setLanguage = (lang: LanguageCode): void => {
+    assertLanguageCode(lang, "language");
     currentLanguage = lang;
     direction = getDirection(lang);
   };
@@ -219,6 +251,7 @@ export const createI18n = (config: I18nConfig): I18nState => {
     dict: TranslationDictionary,
     options: LoadTranslationsOptions = {}
   ): void => {
+    assertLanguageCode(lang, "translations language");
     if (options.bundlePath) {
       const normalizedBundlePath = normalizeBundlePath(options.bundlePath);
       const entry = ensureLanguageEntry(lang);
@@ -238,11 +271,15 @@ export const createI18n = (config: I18nConfig): I18nState => {
     loadTranslations(lang, dict, { bundlePath });
   };
 
-  const hasLoadedBundle = (lang: LanguageCode, bundlePath: BundlePath): boolean =>
-    ensureLanguageEntry(lang).bundleDictionaries.has(normalizeBundlePath(bundlePath));
+  const hasLoadedBundle = (lang: LanguageCode, bundlePath: BundlePath): boolean => {
+    assertLanguageCode(lang, "bundle language");
+    return ensureLanguageEntry(lang).bundleDictionaries.has(normalizeBundlePath(bundlePath));
+  };
 
-  const getLoadedBundlePaths = (lang: LanguageCode): readonly BundlePath[] =>
-    [...ensureLanguageEntry(lang).bundleDictionaries.keys()];
+  const getLoadedBundlePaths = (lang: LanguageCode): readonly BundlePath[] => {
+    assertLanguageCode(lang, "bundle language");
+    return [...ensureLanguageEntry(lang).bundleDictionaries.keys()];
+  };
 
   return {
     get language() {
@@ -265,7 +302,7 @@ export const createI18n = (config: I18nConfig): I18nState => {
 
 // Languages and scripts that are written right-to-left
 const RTL_LANGS = new Set(["ar", "he", "fa", "ur", "dv", "ps", "ku", "syr", "ug", "yi"]);
-const RTL_SCRIPTS = new Set(["Arab", "Hebr", "Thaa", "Syrc"]);
+const RTL_SCRIPTS = new Set(["arab", "hebr", "thaa", "syrc"]);
 
 const getDirection = (lang: LanguageCode): Direction => {
   if (!lang) return "ltr";
@@ -273,8 +310,8 @@ const getDirection = (lang: LanguageCode): Direction => {
   const parts = String(lang).split("-");
   const primary = (parts[0] || "").toLowerCase();
   if (RTL_LANGS.has(primary)) return "rtl";
-  // Look for 4-letter Script subtag (TitleCase by spec). Keep case as-is for comparison set.
+  // RFC 5646 matching is case-insensitive even though script casing has a canonical form.
   const script = parts.find(p => p.length === 4);
-  if (script && RTL_SCRIPTS.has(script)) return "rtl";
+  if (script && RTL_SCRIPTS.has(script.toLowerCase())) return "rtl";
   return "ltr";
 };
