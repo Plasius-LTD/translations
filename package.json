@@ -101,6 +101,7 @@
     }
   ],
   "overrides": {
+    "esbuild": "^0.28.1",
     "minimatch": "^10.2.1"
   },
   "engines": {
