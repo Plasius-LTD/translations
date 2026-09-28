@@ -108,6 +108,6 @@
     "node": ">=24"
   },
   "dependencies": {
-    "@plasius/schema": "^1.4.3"
+    "@plasius/schema": "^1.4.4"
   }
 }
