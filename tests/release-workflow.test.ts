@@ -6,6 +6,9 @@ const readWorkflow = (name: string): string =>
   readFileSync(resolve(process.cwd(), `.github/workflows/${name}.yml`), "utf8");
 const cdWorkflow = readWorkflow("cd");
 const ciWorkflow = readWorkflow("ci");
+const packageMetadata = JSON.parse(readFileSync(resolve(process.cwd(), "package.json"), "utf8"));
+const repositorySlug = new URL(packageMetadata.repository.url.replace(/^git\+/u, ""))
+  .pathname.replace(/^\/|\.git$/gu, "");
 
 describe("package release trust boundary", () => {
   it("uses exact-main hosted OIDC publication without write tokens", () => {
@@ -25,14 +28,28 @@ describe("package release trust boundary", () => {
     expect(cdWorkflow).not.toMatch(/NPM_TOKEN|NODE_AUTH_TOKEN/u);
   });
 
-  it("keeps same-repository pull-request CI on explicit hosted runners", () => {
+  it("admits only trusted push and manual CI events", () => {
     expect(ciWorkflow).toContain("workflow_dispatch:");
-    expect(ciWorkflow).toContain("pull_request:");
-    expect(ciWorkflow).toContain("runs-on: ubuntu-latest");
+    expect(ciWorkflow).toMatch(/push:\s*\n\s+branches: \['\*\*'\]/u);
     expect(ciWorkflow).toContain("package-manager-cache: false");
-    expect(ciWorkflow).toContain("github.event.pull_request.head.repo.full_name == github.repository");
-    expect(ciWorkflow).not.toContain("self-hosted");
-    expect(ciWorkflow).not.toContain("pull_request_target");
-    expect(ciWorkflow).not.toContain("fromJSON(vars.");
+    expect(ciWorkflow).not.toMatch(/pull_request|workflow_call|repository_dispatch/u);
+    expect(ciWorkflow).toContain("group: ci-${{ github.repository }}-${{ github.ref }}");
+    expect(ciWorkflow).toContain("cancel-in-progress: true");
+  });
+
+  const ciJobs = ciWorkflow.split(/^jobs:\s*$/mu)[1] ?? "";
+  const jobBlocks = [...ciJobs.matchAll(/^ {2}([\w-]+):\n([\s\S]*?)(?=^ {2}[\w-]+:|$(?![\s\S]))/gmu)]
+    .map((job) => ({ name: job[1] ?? "", contents: job[2] ?? "" }));
+
+  it("accounts for every CI job", () => {
+    expect(jobBlocks.map((job) => job.name)).toEqual(["build-test", "public_artifact_integrity"]);
+  });
+
+  it.each(jobBlocks)("isolates $name on approved self-hosted runners", ({ contents: job }) => {
+    expect(job.match(/^ {4}runs-on: (.+)$/gmu)).toEqual(["    runs-on: [self-hosted, Linux, X64]"]);
+    expect(job).toContain(`if: \${{ github.repository == '${repositorySlug}' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}`);
+    expect(job).toMatch(/^ {4}timeout-minutes: (?:10|20)$/mu);
+    expect(job).toContain("persist-credentials: false");
+    expect(job).not.toMatch(/\buses:.*\.github\/workflows\//u);
   });
 });
