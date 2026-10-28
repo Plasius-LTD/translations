@@ -8,6 +8,20 @@ The format is based on **[Keep a Changelog](https://keepachangelog.com/en/1.1.0/
 
 ## [Unreleased]
 
+- **Added**
+  - (placeholder)
+
+- **Changed**
+  - (placeholder)
+
+- **Fixed**
+  - (placeholder)
+
+- **Security**
+  - (placeholder)
+
+## [1.0.29] - 2026-10-28
+
 - Restore approved self-hosted CI for trusted push/manual events, with per-job admission guards, credential-free checkout, bounded execution and workflow regression coverage. Keep production OIDC publication on GitHub-hosted runners.
 
 - **Added**
@@ -384,7 +398,7 @@ The format is based on **[Keep a Changelog](https://keepachangelog.com/en/1.1.0/
 
 ---
 
-[Unreleased]: https://github.com/Plasius-LTD/translations/compare/v1.0.28...HEAD
+[Unreleased]: https://github.com/Plasius-LTD/translations/compare/v1.0.29...HEAD
 [1.0.1]: https://github.com/Plasius-LTD/translations/releases/tag/v1.0.1
 [1.0.2]: https://github.com/Plasius-LTD/translations/releases/tag/v1.0.2
 [1.0.3]: https://github.com/Plasius-LTD/translations/releases/tag/v1.0.3
@@ -423,3 +437,4 @@ The format is based on **[Keep a Changelog](https://keepachangelog.com/en/1.1.0/
 [1.0.26]: https://github.com/Plasius-LTD/translations/releases/tag/v1.0.26
 [1.0.27]: https://github.com/Plasius-LTD/translations/releases/tag/v1.0.27
 [1.0.28]: https://github.com/Plasius-LTD/translations/releases/tag/v1.0.28
+[1.0.29]: https://github.com/Plasius-LTD/translations/releases/tag/v1.0.29
