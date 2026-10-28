@@ -268,10 +268,25 @@ This project is licensed under the terms of the [Apache 2.0 license](./LICENSE).
 ## Release integrity
 
 CI keeps the administrative contributor registry outside Git and npm package
-artifacts using exact, case-normalised path checks. Reviewed CI runs on explicit
-GitHub-hosted runners with package-manager caching disabled; fork PR code is
-denied. Publication uses the GitHub-hosted `production` job with Node 24 and
+artifacts using exact, case-normalised path checks. CI runs only on explicit
+`[self-hosted, Linux, X64]` runners with
+package-manager caching disabled and checkout credentials not persisted. Each
+job requires this repository and a trusted push or manual event. Trusted branch
+pushes provide PR-head checks; pull-request events and external forks cannot
+execute on organisation runners. Jobs have bounded timeouts and superseded
+branch runs are cancelled. Publication uses the GitHub-hosted `production` job
+with Node 24 and
 pinned npm 11.6.2. It is token-free and proceeds only while the prepared SHA
 is the exact `main` head after successful push-triggered CI. Do not dispatch CD
-until the npm trusted-publisher binding is verified.
+until the npm trusted-publisher binding is verified. Hosted release preparation,
+publication dispatch, isolated validation/packing, and final publication remain
+separate release roles. Monthly hosted dependency maintenance creates reviewable
+PRs; it is not a replacement for trusted self-hosted CI.
+
+Parent Feature #1597 owns `platform.public-artifact-integrity.enabled` in the
+site rollout control plane. Enabled permits staged clean distribution; disabled
+stops promotion. Mandatory source, artifact, and CI/CD gates always apply and
+cannot be bypassed by the flag. Roll back by disabling the affected workflow or
+release channel and stopping promotion, without restoring administrative paths,
+reusing removed versions, or introducing npm write-token fallbacks.
 <!-- END PLASIUS RELEASE INTEGRITY -->

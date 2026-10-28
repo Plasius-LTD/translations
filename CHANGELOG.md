@@ -8,6 +8,8 @@ The format is based on **[Keep a Changelog](https://keepachangelog.com/en/1.1.0/
 
 ## [Unreleased]
 
+- Restore approved self-hosted CI for trusted push/manual events, with per-job admission guards, credential-free checkout, bounded execution and workflow regression coverage. Keep production OIDC publication on GitHub-hosted runners.
+
 - **Added**
   - (placeholder)
 
