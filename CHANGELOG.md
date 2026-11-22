@@ -8,6 +8,20 @@ The format is based on **[Keep a Changelog](https://keepachangelog.com/en/1.1.0/
 
 ## [Unreleased]
 
+- **Added**
+  - (placeholder)
+
+- **Changed**
+  - (placeholder)
+
+- **Fixed**
+  - (placeholder)
+
+- **Security**
+  - (placeholder)
+
+## [1.0.30] - 2026-11-22
+
 - Refresh supported npm dependency and security tooling baselines; preserve runtime API contracts (weekly maintenance, 2026-11-22).
 
 - **Added**
@@ -400,7 +414,7 @@ The format is based on **[Keep a Changelog](https://keepachangelog.com/en/1.1.0/
 
 ---
 
-[Unreleased]: https://github.com/Plasius-LTD/translations/compare/v1.0.29...HEAD
+[Unreleased]: https://github.com/Plasius-LTD/translations/compare/v1.0.30...HEAD
 [1.0.1]: https://github.com/Plasius-LTD/translations/releases/tag/v1.0.1
 [1.0.2]: https://github.com/Plasius-LTD/translations/releases/tag/v1.0.2
 [1.0.3]: https://github.com/Plasius-LTD/translations/releases/tag/v1.0.3
@@ -440,3 +454,4 @@ The format is based on **[Keep a Changelog](https://keepachangelog.com/en/1.1.0/
 [1.0.27]: https://github.com/Plasius-LTD/translations/releases/tag/v1.0.27
 [1.0.28]: https://github.com/Plasius-LTD/translations/releases/tag/v1.0.28
 [1.0.29]: https://github.com/Plasius-LTD/translations/releases/tag/v1.0.29
+[1.0.30]: https://github.com/Plasius-LTD/translations/releases/tag/v1.0.30
